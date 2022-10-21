@@ -21,8 +21,8 @@ jobs:
         with:
           credentials_json: '${{ secrets.CREDENTIALS }}'
 
-      - name: Docker Auth
-        id: docker-auth
+      - name: GAR Auth
+        id: gar-auth
         uses: docker/login-action@v2
         with:
           registry: gcr.io
