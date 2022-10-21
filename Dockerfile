@@ -7,7 +7,6 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip --no-cache-dir && \
     pip install -r requirements.txt --no-cache-dir
 
-COPY img/ /app/img
 COPY *_Homepage.py "/app/🏠_Homepage.py"
 COPY src/ /app/src
 COPY pages/01_*_Habits.py "/app/pages/01_🎯_Habits.py"
