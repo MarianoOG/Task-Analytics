@@ -1,0 +1,48 @@
+name: Build and Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Google Auth
+        id: 'auth'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.CREDENTIALS }}'
+
+      - name: 'Set up Cloud SDK'
+        id: 'setup'
+        uses: 'google-github-actions/setup-gcloud@v0'
+
+      - name: Configure Docker
+        id: 'docker'
+        run: |
+          gcloud auth configure-docker
+
+      - name: Build and Push Container
+        run: |
+          docker build -t "gcr.io/${{ secrets.PROJECT_ID }}/task-analytics:${{ github.sha }}" ./
+          docker push "gcr.io/${{ secrets.PROJECT_ID }}/task-analytics:${{ github.sha }}"
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        run: |
+          gcloud run deploy task-analytics \
+          --region europe-west1 \
+          --image gcr.io/${{ secrets.PROJECT_ID }}/task-analytics:${{ github.sha }} \
+          --allow-unauthenticated \
+          --min-instances=0 \
+          --max-instances=1 \
+          --project ${{ secrets.PROJECT_ID }}
+

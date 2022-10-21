@@ -1,14 +1,6 @@
 # Todoist Analytics
 
-The main goal for this tool is to help you visualize, analyze and get insights about your todoist tasks data. 
-
-You can interact with the demo here: 
-* https://todoist-analytics.azurewebsites.net/
-
-You can also find a docker image here:
-* https://hub.docker.com/repository/docker/marianoog/todoist_analytics
-
-![Analytics logo](img/analytics_logo_300x300.png)
+The main goal for this tool is to help you visualize, analyze and get insights about your tasks data.
 
 I always wanted to have something like this in todoist or with an integration, I was thinking on doing something my own,
 but I didn't want to deal with some parts of the app like session states and data retrieval. 
