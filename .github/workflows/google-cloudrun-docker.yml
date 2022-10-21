@@ -17,7 +17,7 @@ jobs:
 
       - name: Google Auth
         id: auth
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.6.0
         with:
           version: 'latest'
           service_account_email: ${{ secrets.SERVICE_ACCOUNT }}
