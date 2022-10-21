@@ -1,9 +1,3 @@
-# local files
-src/credentials.py
-
-# local folders
-src/backend/db
-
 # more hidden folders
 .venv/
 .vscode/

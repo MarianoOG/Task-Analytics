@@ -1,9 +1,12 @@
+import os
 import asyncio
 import requests
 import streamlit as st
 from streamlit.scriptrunner import get_script_run_ctx
 from streamlit.server.server import Server
-from src.credentials import client_id, client_secret
+
+client_id = os.environ.get("CLIENT_ID")
+client_secret = os.environ.get("CLIENT_SECRET")
 
 
 # SessionState class that has all the information
