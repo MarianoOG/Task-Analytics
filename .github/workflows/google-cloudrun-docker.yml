@@ -39,8 +39,9 @@ jobs:
         run: |
           gcloud run deploy task-analytics \
           --region europe-west1 \
-          --image gcr.io/${{ secrets.PROJECT_ID }}/task-analytics \
-          --platform managed \
+          --image gcr.io/${{ secrets.PROJECT_ID }}/task-analytics:${{ github.sha }} \
           --allow-unauthenticated \
+          --min-instances=0 \
+          --max-instances=1 \
           --project ${{ secrets.PROJECT_ID }}
 
