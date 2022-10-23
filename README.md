@@ -1,6 +1,8 @@
-# Todoist Analytics
+# Task Analytics
 
-The main goal for this tool is to help you visualize, analyze and get insights about your tasks data.
+The main goal for this tool is to help you visualize, analyze and get insights about your task data.
+
+You can access the demo in [task-analytics.marianoog.com](https://task-analytics.marianoog.com/).
 
 I always wanted to have something like this in todoist or with an integration, I was thinking on doing something my own,
 but I didn't want to deal with some parts of the app like session states and data retrieval. 
@@ -16,7 +18,7 @@ suggestions.
 
 ### Virtual Environment
 
-1. Create an app in your todoist account: https://developer.todoist.com/appconsole.html
+1. Create an app in your todoist [App Management](https://developer.todoist.com/appconsole.html) page.
 
 2. Clone the repository
 ```
