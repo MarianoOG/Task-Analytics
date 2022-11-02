@@ -8,7 +8,7 @@ def render():
     # Get data
     st.title("Homepage" + " - Welcome " + st.session_state["user"]["full_name"])
     tasks = st.session_state["tasks"].copy()
-    completed_tasks = tasks.dropna(subset=["completed_date"])
+    completed_tasks = tasks.dropna(subset=["completed_at"])
     active_tasks = tasks[tasks["priority"] != "Priority 0"]
     due_tasks = active_tasks.dropna(subset=["due_date"])
 
@@ -22,8 +22,8 @@ def render():
 
     # Completed tasks heatmap of the current year
     st.header(f"Heatmap of completed task in current year")
-    tasks_of_year = completed_tasks[completed_tasks["completed_date"].dt.year == date.today().year]
-    counts_of_year_per_day = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_date'].dt.date).count()
+    tasks_of_year = completed_tasks[completed_tasks["completed_at"].dt.year == date.today().year]
+    counts_of_year_per_day = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_at'].dt.date).count()
     fig, _ = heatmap_plot(counts_of_year_per_day)
     st.pyplot(fig)
 

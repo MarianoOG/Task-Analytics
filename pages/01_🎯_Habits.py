@@ -34,19 +34,19 @@ def render():
 
     # Get all tasks
     tasks = st.session_state["tasks"].copy()
-    tasks = tasks[["task_id", "content", "project_name", "completed_date"]].dropna(subset=["completed_date"])
+    tasks = tasks[["task_id", "content", "project_name", "completed_at"]].dropna(subset=["completed_at"])
 
     # Year help array
-    years = tasks["completed_date"].dt.year.unique().tolist()
+    years = tasks["completed_at"].dt.year.unique().tolist()
 
     # Filter by year
     year = st.sidebar.selectbox("Year", years)
 
     # Filter tasks of the selected year
-    tasks_of_year = tasks[tasks["completed_date"].dt.year == year]
+    tasks_of_year = tasks[tasks["completed_at"].dt.year == year]
 
     # Months help arrays
-    months = tasks_of_year["completed_date"].dt.month.unique().tolist()
+    months = tasks_of_year["completed_at"].dt.month.unique().tolist()
     month_names = ['January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -56,11 +56,11 @@ def render():
     # Filter tasks of the selected month, get the quarter of the selected month and filter for the selected quarter
     month = month_names.index(month_name) + 1
     quarter = (month - 1) // 3 + 1
-    tasks_of_quarter = tasks_of_year[tasks_of_year["completed_date"].dt.quarter == quarter]
-    tasks_of_month = tasks_of_quarter[tasks_of_quarter["completed_date"].dt.month == month]
+    tasks_of_quarter = tasks_of_year[tasks_of_year["completed_at"].dt.quarter == quarter]
+    tasks_of_month = tasks_of_quarter[tasks_of_quarter["completed_at"].dt.month == month]
 
     # Days help array
-    days = tasks_of_month["completed_date"].dt.day.unique().tolist()
+    days = tasks_of_month["completed_at"].dt.day.unique().tolist()
 
     # Get all the days in the data and filter for the selected day
     day = st.sidebar.selectbox("Day", days)
@@ -69,25 +69,25 @@ def render():
     # Get the week that belongs to the selected day, filter for the selected week and filter for the selected day
     start_day = 8 - st.session_state["user"]["start_day"]
     week = (date(year, month, day) + timedelta(days=start_day)) .isocalendar()[1]
-    tasks_of_week = tasks_of_year[(tasks_of_year["completed_date"] +
+    tasks_of_week = tasks_of_year[(tasks_of_year["completed_at"] +
                                    timedelta(days=start_day)).dt.isocalendar().week == week]
 
     # Filter for habits
     habits = tasks[tasks.duplicated(subset=["task_id"], keep=False)]
-    habits_of_year = habits[habits["completed_date"].dt.year == year]
-    habits_of_quarter = habits_of_year[habits_of_year["completed_date"].dt.quarter == quarter]
-    habits_of_month = habits_of_quarter[habits_of_quarter["completed_date"].dt.month == month]
-    habits_of_week = habits_of_year[(habits_of_year["completed_date"] +
+    habits_of_year = habits[habits["completed_at"].dt.year == year]
+    habits_of_quarter = habits_of_year[habits_of_year["completed_at"].dt.quarter == quarter]
+    habits_of_month = habits_of_quarter[habits_of_quarter["completed_at"].dt.month == month]
+    habits_of_week = habits_of_year[(habits_of_year["completed_at"] +
                                      timedelta(days=start_day)).dt.isocalendar().week == week]
     # Get the number of aggregated tasks per day
-    counts_of_year_per_day = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_date'].dt.date).count()
-    counts_of_quarter_per_day = counts_of_year_per_day[tasks_of_quarter['completed_date'].dt.date]
-    counts_of_month_per_day = counts_of_quarter_per_day[tasks_of_month['completed_date'].dt.date]
-    counts_of_week_per_day = counts_of_year_per_day[tasks_of_week['completed_date'].dt.date]
+    counts_of_year_per_day = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_at'].dt.date).count()
+    counts_of_quarter_per_day = counts_of_year_per_day[tasks_of_quarter['completed_at'].dt.date]
+    counts_of_month_per_day = counts_of_quarter_per_day[tasks_of_month['completed_at'].dt.date]
+    counts_of_week_per_day = counts_of_year_per_day[tasks_of_week['completed_at'].dt.date]
 
     # Get the number of aggregated tasks per month
-    counts_of_year_per_month = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_date'].dt.month).count()
-    counts_of_quarter_per_month = counts_of_year_per_month[tasks_of_quarter['completed_date'].dt.month]
+    counts_of_year_per_month = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_at'].dt.month).count()
+    counts_of_quarter_per_month = counts_of_year_per_month[tasks_of_quarter['completed_at'].dt.month]
     counts_of_year_per_month.set_axis([month_names[i - 1] for i in counts_of_year_per_month.index], inplace=True)
     counts_of_quarter_per_month.set_axis([month_names[i - 1] for i in counts_of_quarter_per_month.index], inplace=True)
 

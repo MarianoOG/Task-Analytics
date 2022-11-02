@@ -13,12 +13,12 @@ def render():
 
     # Get all tasks
     tasks = st.session_state["tasks"].copy()
-    completed_tasks = tasks.dropna(subset=["completed_date"])
+    completed_tasks = tasks.dropna(subset=["completed_at"])
     completed_tasks["week"] = completed_tasks["year"].astype(str) + "_" + \
         completed_tasks["week"].map(lambda x: "{:02d}".format(x))
 
     # Get count of completed tasks per day and week
-    completed_tasks_per_day = completed_tasks["task_id"].groupby(by=completed_tasks["completed_date"].dt.date)\
+    completed_tasks_per_day = completed_tasks["task_id"].groupby(by=completed_tasks["completed_at"].dt.date)\
                                                         .count().rename("count")
     completed_tasks_per_week = completed_tasks["task_id"].groupby(by=completed_tasks["week"]).count().rename("count")
 
@@ -40,10 +40,10 @@ def render():
     weekly_goal = st.session_state["user"].get("weekly_goal", 0)
 
     # Get age of active tasks
-    active_tasks = tasks[tasks["added_date"].apply(lambda x: not pd.isnull(x))]
+    active_tasks = tasks[tasks["added_at"].apply(lambda x: not pd.isnull(x))]
     active_tasks = active_tasks[active_tasks["due_date"].apply(lambda x: pd.isnull(x))]
     active_tasks = active_tasks[active_tasks["recurring"].apply(lambda x: not x)]
-    age_in_days = (date.today() - active_tasks["added_date"].dt.date).dt.days.rename("Age In Days")
+    age_in_days = (date.today() - active_tasks["added_at"].dt.date).dt.days.rename("Age In Days")
 
     # Goals, velocity and recommendation
     col1, col2, col3 = st.columns(3)

@@ -17,7 +17,9 @@ def expandable_with_tasks(task_list, day, expanded=False):
         emoji = "⌛" if task_list.shape[0] <= day_goal else "➖"
 
     with st.expander(day.strftime('%A') + " " + emoji + " (" + str(task_list.shape[0]) + ")", expanded=expanded):
-        for i, (task_id, completed, task) in enumerate(zip(task_list["task_id"], completed_list, task_list["content"].tolist())):
+        for i, (task_id, completed, task) in enumerate(zip(task_list["task_id"],
+                                                           completed_list,
+                                                           task_list["content"].tolist())):
             if completed:
                 st.markdown("✔ " + task)
             elif emoji == "🏆" or i+1 > day_goal:
@@ -42,7 +44,7 @@ def render():
 
     # Combine due date and completed date
     week_tasks = tasks.copy()
-    week_tasks["date"] = tasks.apply(lambda x: x["due_date"] if x["completed_date"] is pd.NaT else x["completed_date"],
+    week_tasks["date"] = tasks.apply(lambda x: x["due_date"] if x["completed_at"] is pd.NaT else x["completed_at"],
                                      axis=1)
 
     # Start day and today
@@ -57,14 +59,14 @@ def render():
     # Filter tasks of the week
     week_tasks = week_tasks[week_tasks["year"] == today.year]
     week_tasks = week_tasks[week_tasks["week"] == today.isocalendar()[1]]
-    week_tasks = week_tasks.sort_values(by=["completed_date", "due_date"])
+    week_tasks = week_tasks.sort_values(by=["completed_at", "due_date"])
 
     # Layout of page
     other_col, now_col, suggestions_col = st.columns([1, 2, 1])
 
     # Suggestions
     suggestions = tasks.copy()
-    suggestions = suggestions[suggestions["completed_date"].isnull()]
+    suggestions = suggestions[suggestions["completed_at"].isnull()]
     suggestions = suggestions[suggestions["due_date"].isnull()]
 
     # Rank projects
@@ -77,16 +79,19 @@ def render():
         projects.remove(project)
 
     # Rank suggestions by priority, rank and age
-    suggestions["age"] = (date.today() - suggestions["added_date"].dt.date).dt.days
+    suggestions["age"] = (date.today() - suggestions["added_at"].dt.date).dt.days
     suggestions["rank"] = (suggestions["age"].max() - suggestions["age"])/suggestions["age"].max() + \
         suggestions["project_name"].map(sort_project)/len(sort_project)
-    suggestions = suggestions.sort_values(by=["priority", "rank", "added_date"], ascending=[False, True, True])
+    suggestions = suggestions.sort_values(by=["priority", "rank", "added_at"], ascending=[False, True, True])
 
     # Rank week tasks by priority, rank and age
-    week_tasks["age"] = (date.today() - week_tasks["added_date"].dt.date).dt.days
+    week_tasks["age"] = (date.today() - week_tasks["added_at"].dt.date).dt.days
     week_tasks["rank"] = (week_tasks["age"].max() - week_tasks["age"]) / week_tasks["age"].max() + \
                           week_tasks["project_name"].map(sort_project) / len(sort_project)
-    week_tasks = week_tasks.sort_values(by=["completed_date", "priority", "rank", "added_date"], ascending=[True, False, True, True])
+    week_tasks = week_tasks.sort_values(by=["completed_at",
+                                            "priority",
+                                            "rank",
+                                            "added_at"], ascending=[True, False, True, True])
 
     # Group by day in expanders
     for day in week_tasks["date"].apply(lambda x: x.date).unique():
