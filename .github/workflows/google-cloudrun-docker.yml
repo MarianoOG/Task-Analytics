@@ -28,7 +28,7 @@ jobs:
       - name: Configure Docker
         id: 'docker'
         run: |
-          gcloud auth configure-docker
+          gcloud auth configure-docker ${{ secrets.LOCATION }}-docker.pkg.dev
 
       - name: Build and Push Container
         run: |
