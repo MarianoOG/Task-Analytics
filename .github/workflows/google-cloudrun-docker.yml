@@ -34,7 +34,6 @@ jobs:
       - name: Build and Push Container
         id: 'build'
         run: |
-          docker pull "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod"
           docker build -t "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:${{ github.sha }}" ./
           docker push "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:${{ github.sha }}"
 
