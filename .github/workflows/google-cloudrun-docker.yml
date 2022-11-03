@@ -28,21 +28,22 @@ jobs:
       - name: Configure Docker
         id: 'docker'
         run: |
-          gcloud auth configure-docker ${{ secrets.LOCATION }}-docker.pkg.dev ./
-          export IMAGE_NAME="${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:${{ github.sha }}" ./
+          gcloud auth configure-docker ${{ secrets.LOCATION }}-docker.pkg.dev
+          export IMAGE_NAME="${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod"
           echo "::set-env name=IMAGE_NAME::$IMAGE_NAME" 
 
       - name: Build and Push Container
         run: |
-          docker build -t $IMAGE_NAME ./
-          docker push $IMAGE_NAME
+          docker pull $IMAGE_NAME
+          docker build -t $IMAGE_NAME:${{ github.sha }} ./
+          docker push $IMAGE_NAME:${{ github.sha }}
 
       - name: Deploy to Cloud Run
         id: deploy
         run: |
           gcloud run deploy task-analytics \
           --region ${{ secrets.LOCATION }} \
-          --image $IMAGE_NAME \
+          --image $IMAGE_NAME:${{ github.sha }} \
           --allow-unauthenticated \
           --min-instances=0 \
           --max-instances=1 \
