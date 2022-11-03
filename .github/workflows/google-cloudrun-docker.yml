@@ -32,15 +32,15 @@ jobs:
 
       - name: Build and Push Container
         run: |
-          docker build -t "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/${{ github.branch }}:${{ github.sha }}" ./
-          docker push "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/${{ github.branch }}:${{ github.sha }}"
+          docker build -t "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:${{ github.sha }}" ./
+          docker push "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:${{ github.sha }}"
 
       - name: Deploy to Cloud Run
         id: deploy
         run: |
           gcloud run deploy task-analytics \
           --region ${{ secrets.LOCATION }} \
-          --image ${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/${{ github.branch }}:${{ github.sha }} \
+          --image ${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:${{ github.sha }} \
           --allow-unauthenticated \
           --min-instances=0 \
           --max-instances=1 \
