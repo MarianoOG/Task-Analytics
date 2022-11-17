@@ -34,7 +34,7 @@ jobs:
       - name: Build and Push Container
         id: 'build'
         run: |
-          docker build -t "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:${{ github.sha }}" -t "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:latest"./
+          docker build -t "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:${{ github.sha }}" -t "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:latest" ./
           docker push "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod" --all-tags
 
       - name: Deploy to Cloud Run
