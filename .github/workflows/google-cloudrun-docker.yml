@@ -35,14 +35,14 @@ jobs:
         id: 'build'
         run: |
           docker build -t "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:${{ github.sha }}" -t "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:latest"./
-          docker push "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod --all-tags"
+          docker push "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod" --all-tags
 
       - name: Deploy to Cloud Run
         id: 'deploy'
         run: |
           gcloud run deploy task-analytics \
           --region ${{ secrets.LOCATION }} \
-          --image "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod:${{ github.sha }}" \
+          --image "${{ secrets.LOCATION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/task-analytics/prod" \
           --allow-unauthenticated \
           --min-instances=0 \
           --max-instances=1 \
