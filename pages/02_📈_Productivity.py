@@ -26,11 +26,13 @@ def render():
     day_fig, _, day_velocity = plot_with_average(completed_tasks_per_day,
                                                  x_label="Date",
                                                  y_label="# Tasks",
-                                                 ema=7)
+                                                 ema=7,
+                                                 interval=60)
     week_fig, ax, week_velocity = plot_with_average(completed_tasks_per_week,
                                                     x_label="Week",
                                                     y_label="# Tasks",
-                                                    ema=13)
+                                                    ema=13,
+                                                    interval=1)
     for i, tick in enumerate(ax.xaxis.get_major_ticks()):
         if i % 15 != 5:
             tick.label1.set_visible(False)

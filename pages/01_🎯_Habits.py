@@ -1,7 +1,7 @@
 import streamlit as st
 from datetime import date, timedelta
 from src.utils import is_data_ready
-from src.plots import plot_with_average, calendar_plot, month_plot
+from src.plots import plot_with_average
 
 
 def habits_and_goals_metrics(goal, actual, habits):
@@ -18,57 +18,46 @@ def habits_and_goals_metrics(goal, actual, habits):
 
 
 def render():
-    # Title
-    st.title("Habits")
+    ################################
+    #             DATA             #
+    ################################
 
-    # Layout of app
-    week_tab, month_tab, quarter_tab = st.tabs(["Week", "Month", "Quarter"])
+    # Get all tasks
+    tasks = st.session_state["tasks"].copy()
+    tasks = tasks[["task_id", "content", "project_name", "completed_at"]].dropna(subset=["completed_at"])
 
-    # Sidebar notes
+    ################################
+    #           SIDEBAR            #
+    ################################
+
+    # Sidebar notes and controls
     st.sidebar.caption("Habits are recurring tasks completed at least twice.")
     habit_percentage = st.sidebar.slider(label="Percentage slider",
                                          min_value=1,
                                          max_value=99,
                                          value=30,
                                          format="%i%%") / 100.0
+    selected_date = st.sidebar.date_input("Date",
+                                          date.today(),
+                                          min_value=min(tasks["completed_at"].to_list()),
+                                          max_value=max(tasks["completed_at"].to_list()))
 
-    # Get all tasks
-    tasks = st.session_state["tasks"].copy()
-    tasks = tasks[["task_id", "content", "project_name", "completed_at"]].dropna(subset=["completed_at"])
-
-    # Year help array
-    years = tasks["completed_at"].dt.year.unique().tolist()
-
-    # Filter by year
-    year = st.sidebar.selectbox("Year", years)
-
-    # Filter tasks of the selected year
-    tasks_of_year = tasks[tasks["completed_at"].dt.year == year]
-
-    # Months help arrays
-    months = tasks_of_year["completed_at"].dt.month.unique().tolist()
-    month_names = ['January', 'February', 'March', 'April', 'May', 'June',
-                   'July', 'August', 'September', 'October', 'November', 'December']
-
-    # Get all the months in the data and filter for the selected month
-    month_name = st.sidebar.selectbox("Month", [month_names[m-1] for m in months])
-
-    # Filter tasks of the selected month, get the quarter of the selected month and filter for the selected quarter
-    month = month_names.index(month_name) + 1
+    # Unpack date
+    year = selected_date.year
+    month = selected_date.month
     quarter = (month - 1) // 3 + 1
+    day = selected_date.day
+    start_day = 8 - st.session_state["user"]["start_day"]
+    week = (date(year, month, day) + timedelta(days=start_day)).isocalendar()[1]
+
+    ################################
+    #         FILTER DATA          #
+    ################################
+
+    # Tasks per period of time
+    tasks_of_year = tasks[tasks["completed_at"].dt.year == year]
     tasks_of_quarter = tasks_of_year[tasks_of_year["completed_at"].dt.quarter == quarter]
     tasks_of_month = tasks_of_quarter[tasks_of_quarter["completed_at"].dt.month == month]
-
-    # Days help array
-    days = tasks_of_month["completed_at"].dt.day.unique().tolist()
-
-    # Get all the days in the data and filter for the selected day
-    day = st.sidebar.selectbox("Day", days)
-    st.sidebar.date_input("When's your birthday", date.today())
-
-    # Get the week that belongs to the selected day, filter for the selected week and filter for the selected day
-    start_day = 8 - st.session_state["user"]["start_day"]
-    week = (date(year, month, day) + timedelta(days=start_day)) .isocalendar()[1]
     tasks_of_week = tasks_of_year[(tasks_of_year["completed_at"] +
                                    timedelta(days=start_day)).dt.isocalendar().week == week]
 
@@ -86,51 +75,50 @@ def render():
     counts_of_week_per_day = counts_of_year_per_day[tasks_of_week['completed_at'].dt.date]
 
     # Get the number of aggregated tasks per month
+    month_names = ['January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November', 'December']
     counts_of_year_per_month = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_at'].dt.month).count()
     counts_of_quarter_per_month = counts_of_year_per_month[tasks_of_quarter['completed_at'].dt.month]
     counts_of_year_per_month.set_axis([month_names[i - 1] for i in counts_of_year_per_month.index], inplace=True)
     counts_of_quarter_per_month.set_axis([month_names[i - 1] for i in counts_of_quarter_per_month.index], inplace=True)
 
-    # Quarter tab: calendar, category pie and plot with average
-    with quarter_tab:
-        habits_and_goals_metrics(habit_percentage, tasks_of_quarter.shape[0], habits_of_quarter.shape[0])
-        st.header("Calendar heatmap view")
-        fig, _ = calendar_plot(counts_of_quarter_per_day)
-        st.pyplot(fig)
-        st.header("Tasks by day")
-        fig2, _ = plot_with_average(counts_of_quarter_per_day,
-                                    x_label="Day",
-                                    y_label="# Tasks",
-                                    figsize=(9, 4),
-                                    labelrotation=30)
-        st.pyplot(fig2)
+    ################################
+    #        MAIN DASHBOARD        #
+    ################################
 
-    # Month tab: calendar, category pie and plot with average
-    with month_tab:
-        habits_and_goals_metrics(habit_percentage, tasks_of_month.shape[0], habits_of_month.shape[0])
-        fig, _ = month_plot(counts_of_month_per_day, month)
-        fig2, _ = plot_with_average(counts_of_month_per_day,
-                                    x_label="Day",
-                                    y_label="# Tasks",
-                                    figsize=(9, 4),
-                                    labelrotation=30)
+    # Title
+    st.title("Habits")
 
-        col1, col2 = st.columns(2)
-        col1.header("Calendar heatmap view")
-        col1.pyplot(fig)
-        col2.header("Tasks by day")
-        col2.pyplot(fig2)
+    # Week category pie and plot with average
+    st.header("Week")
+    habits_and_goals_metrics(habit_percentage, tasks_of_week.shape[0], habits_of_week.shape[0])
+    fig1, _ = plot_with_average(counts_of_week_per_day,
+                                x_label="Day",
+                                y_label="# Tasks",
+                                figsize=(9, 4),
+                                labelrotation=30,
+                                interval=1)
+    st.pyplot(fig1)
 
-    # Week tab: category pie and plot with average
-    with week_tab:
-        habits_and_goals_metrics(habit_percentage, tasks_of_week.shape[0], habits_of_week.shape[0])
-        fig, _ = plot_with_average(counts_of_week_per_day,
-                                   x_label="Day",
-                                   y_label="# Tasks",
-                                   figsize=(9, 4),
-                                   labelrotation=30)
-        st.header("Tasks by day")
-        st.pyplot(fig)
+    # Month category pie and plot with average
+    st.header("Month")
+    habits_and_goals_metrics(habit_percentage, tasks_of_month.shape[0], habits_of_month.shape[0])
+    fig2, _ = plot_with_average(counts_of_month_per_day,
+                                x_label="Day",
+                                y_label="# Tasks",
+                                figsize=(9, 4),
+                                labelrotation=30)
+    st.pyplot(fig2)
+
+    # Quarter category pie and plot with average
+    st.header("Quarter")
+    habits_and_goals_metrics(habit_percentage, tasks_of_quarter.shape[0], habits_of_quarter.shape[0])
+    fig3, _ = plot_with_average(counts_of_quarter_per_day,
+                                x_label="Day",
+                                y_label="# Tasks",
+                                figsize=(9, 4),
+                                labelrotation=30)
+    st.pyplot(fig3)
 
 
 if __name__ == "__main__":
