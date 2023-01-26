@@ -3,6 +3,8 @@ from datetime import date
 import streamlit as st
 from src.utils import is_data_ready
 from src.plots import plot_with_average, histogram
+from prophet import Prophet
+from prophet.plot import add_changepoints_to_plot
 
 
 def render():
@@ -14,7 +16,7 @@ def render():
     # Get all tasks
     tasks = st.session_state["tasks"].copy()
     completed_tasks = tasks.dropna(subset=["completed_at"])
-    completed_tasks["week"] = completed_tasks["year"].astype(str) + "_" + \
+    completed_tasks["week"] = completed_tasks["year"].astype(str) + "-S" + \
         completed_tasks["week"].map(lambda x: "{:02d}".format(x))
 
     # Get count of completed tasks per day and week
@@ -22,17 +24,25 @@ def render():
                                                         .count().rename("count")
     completed_tasks_per_week = completed_tasks["task_id"].groupby(by=completed_tasks["week"]).count().rename("count")
 
-    # Figures of counts per day and week
-    day_fig, _ = plot_with_average(completed_tasks_per_day,
-                                   x_label="Date",
-                                   y_label="# Tasks",
-                                   interval=60)
-    week_fig, _ = plot_with_average(completed_tasks_per_week,
-                                    x_label="Week",
-                                    y_label="# Tasks",
-                                    interval=10)
+    # Calculate Velocity
     day_velocity = completed_tasks_per_day.ewm(span=7).mean()[-2]
     week_velocity = completed_tasks_per_week.ewm(span=13).mean()[-2]
+
+    # Create forecast over the next week of the data
+    data = completed_tasks_per_day.copy().reset_index()
+    data = data.rename(columns={"completed_at": "ds", "count": "y"})
+    m = Prophet(changepoint_prior_scale=2.0)
+    m.fit(data)
+    future = m.make_future_dataframe(periods=7)
+    forecast = m.predict(future)
+
+    # Calculate recommended goals based on predictions
+    prediction = forecast[["ds", "trend", "yhat"]].tail(7)
+    prediction["yhat"][prediction["yhat"] <= 0.0] = prediction["trend"]
+    prediction["day_of_the_week"] = prediction["ds"].apply(lambda x: x.weekday() + 1)
+    recommended_daily_goal = prediction[prediction["day_of_the_week"].apply(
+                                lambda x: x not in st.session_state["user"]["days_off"])]["yhat"].mean()
+    recommended_weekly_goal = prediction["yhat"].sum()
 
     # Get goals per day and week
     daily_goal = st.session_state["user"].get("daily_goal", 0)
@@ -44,7 +54,7 @@ def render():
     active_tasks = active_tasks[active_tasks["recurring"].apply(lambda x: not x)]
     age_in_days = (date.today() - active_tasks["added_at"].dt.date).dt.days.rename("Age In Days")
 
-    # Goals, velocity and recommendation
+    # Daily goals, velocity and recommendation
     col1, col2, col3 = st.columns(3)
     col1.metric("Daily Goal",
                 "{} tasks".format(daily_goal),
@@ -53,11 +63,22 @@ def render():
                 "{}".format(round(day_velocity, 1)),
                 help="Calculated using Exponential Moving Average on 7 days (EMA7) for yesterday.")
     col3.metric("Recommended Goal",
-                "{} tasks".format(round(day_velocity * 1.05)),
-                help="5% above actual velocity")
+                "{} tasks".format(round(recommended_daily_goal)),
+                help="Calculated using ML forecast over the next week (excludes days off)")
+    day_fig, _ = plot_with_average(completed_tasks_per_day,
+                                   x_label="Date",
+                                   y_label="# Tasks",
+                                   labelrotation=30,
+                                   x_tick_interval=30)
     st.pyplot(day_fig)
 
-    # Goals, velocity and recommendation
+    # Plot forecast
+    with st.expander("Trend Line Analysis"):
+        forecast_fig = m.plot(forecast)
+        add_changepoints_to_plot(forecast_fig.gca(), m, forecast)
+        st.pyplot(forecast_fig)
+
+    # Weekly goals, velocity and recommendation
     col1, col2, col3 = st.columns(3)
     col1.metric("Weekly Goal",
                 "{} tasks".format(weekly_goal),
@@ -66,8 +87,13 @@ def render():
                 "{}".format(round(week_velocity, 1)),
                 help="Calculated using Exponential Moving Average on 13 weeks (EMA13) for last week.")
     col3.metric("Recommended Goal",
-                "{} tasks".format(round(week_velocity * 1.05)),
-                help="5% above actual velocity")
+                "{} tasks".format(round(recommended_weekly_goal)),
+                help="Calculated using ML forecast over the next week")
+    week_fig, _ = plot_with_average(completed_tasks_per_week,
+                                    x_label="Week",
+                                    y_label="# Tasks",
+                                    labelrotation=30,
+                                    x_tick_interval=5)
     st.pyplot(week_fig)
 
     # WIP, age, and lead time
