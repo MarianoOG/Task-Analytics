@@ -57,7 +57,9 @@ class DataCollector:
         params = {"limit": limit, "offset": offset}
         resp = requests.get(url, headers=headers, params=params)
 
-        if resp.status_code != 200:
+        if resp.status_code == 500:
+            print("Server error!")
+        elif resp.status_code != 200:
             time.sleep(1)
             self._collect_completed_tasks(limit, offset)
         else:
@@ -94,7 +96,6 @@ class DataCollector:
         active_tasks.drop(["project_id"], axis=1, inplace=True)
 
         # completed_tasks
-        print(self.tasks.columns)
         self.tasks["priority"] = 0
         self.tasks = self.tasks.merge(projects[["project_id", "project_name", "color"]],
                                       how="left",
