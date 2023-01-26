@@ -10,6 +10,7 @@ def histogram(data):
     ax.set_xlabel(data.name)
     ax.set_ylabel("# Tasks")
     ax.legend(["Average ({})".format(round(data.mean(), 1)), "Total"])
+    ax.grid(visible=True, axis="y")
     return fig, ax
 
 
@@ -51,15 +52,16 @@ def category_plot(data, category):
     return fig, ax
 
 
-def plot_with_average(data, x_label="", y_label="", figsize=(15, 3), labelrotation=0, interval=5):
+def plot_with_average(data, x_label="", y_label="", figsize=(15, 3), labelrotation=0, x_tick_interval=5):
     mean = data.values.mean()
     fig, ax = plt.subplots(figsize=figsize, dpi=100)
     ax.plot(data.index, data.values, 'mediumseagreen')
     ax.axhline(mean, color='r', linestyle='--')
     ax.set_xlabel(x_label)
     ax.tick_params(axis='x', labelrotation=labelrotation)
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=interval))
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=x_tick_interval))
     ax.set_ylabel(y_label)
     ax.set_ylim([0, ax.get_ylim()[1]])
     ax.legend(["Total", "Average ({})".format(round(mean, 1))])
+    ax.grid(visible=True)
     return fig, ax

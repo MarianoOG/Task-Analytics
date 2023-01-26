@@ -95,9 +95,8 @@ def render():
     fig1, _ = plot_with_average(counts_of_week_per_day,
                                 x_label="Day",
                                 y_label="# Tasks",
-                                figsize=(9, 4),
                                 labelrotation=30,
-                                interval=1)
+                                x_tick_interval=1)
     st.pyplot(fig1)
 
     # Month category pie and plot with average
@@ -106,8 +105,8 @@ def render():
     fig2, _ = plot_with_average(counts_of_month_per_day,
                                 x_label="Day",
                                 y_label="# Tasks",
-                                figsize=(9, 4),
-                                labelrotation=30)
+                                labelrotation=30,
+                                x_tick_interval=2)
     st.pyplot(fig2)
 
     # Quarter category pie and plot with average
@@ -116,7 +115,6 @@ def render():
     fig3, _ = plot_with_average(counts_of_quarter_per_day,
                                 x_label="Day",
                                 y_label="# Tasks",
-                                figsize=(9, 4),
                                 labelrotation=30)
     st.pyplot(fig3)
 
