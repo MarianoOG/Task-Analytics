@@ -12,7 +12,7 @@ def expandable_with_tasks(task_list, day, expanded=False):
     if day < today:
         emoji = "🏆" if task_list.shape[0] > day_goal else "❌"
     elif day == today:
-        emoji = "🏆" if len(completed_list) > day_goal else "⌛"
+        emoji = "🏆" if completed_list.count(True) > day_goal else "⌛"
     else:
         emoji = "⌛" if task_list.shape[0] <= day_goal else "➖"
 
@@ -87,7 +87,7 @@ def render():
     # Rank week tasks by priority, rank and age
     week_tasks["age"] = (date.today() - week_tasks["added_at"].dt.date).dt.days
     week_tasks["rank"] = (week_tasks["age"].max() - week_tasks["age"]) / week_tasks["age"].max() + \
-                          week_tasks["project_name"].map(sort_project) / len(sort_project)
+        week_tasks["project_name"].map(sort_project) / len(sort_project)
     week_tasks = week_tasks.sort_values(by=["completed_at",
                                             "priority",
                                             "rank",
