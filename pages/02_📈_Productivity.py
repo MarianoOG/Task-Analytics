@@ -23,19 +23,16 @@ def render():
     completed_tasks_per_week = completed_tasks["task_id"].groupby(by=completed_tasks["week"]).count().rename("count")
 
     # Figures of counts per day and week
-    day_fig, _, day_velocity = plot_with_average(completed_tasks_per_day,
-                                                 x_label="Date",
-                                                 y_label="# Tasks",
-                                                 ema=7,
-                                                 interval=60)
-    week_fig, ax, week_velocity = plot_with_average(completed_tasks_per_week,
-                                                    x_label="Week",
-                                                    y_label="# Tasks",
-                                                    ema=13,
-                                                    interval=1)
-    for i, tick in enumerate(ax.xaxis.get_major_ticks()):
-        if i % 15 != 5:
-            tick.label1.set_visible(False)
+    day_fig, _ = plot_with_average(completed_tasks_per_day,
+                                   x_label="Date",
+                                   y_label="# Tasks",
+                                   interval=60)
+    week_fig, _ = plot_with_average(completed_tasks_per_week,
+                                    x_label="Week",
+                                    y_label="# Tasks",
+                                    interval=10)
+    day_velocity = completed_tasks_per_day.ewm(span=7).mean()[-2]
+    week_velocity = completed_tasks_per_week.ewm(span=13).mean()[-2]
 
     # Get goals per day and week
     daily_goal = st.session_state["user"].get("daily_goal", 0)

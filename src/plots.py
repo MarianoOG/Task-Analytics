@@ -51,25 +51,15 @@ def category_plot(data, category):
     return fig, ax
 
 
-def plot_with_average(data, x_label="", y_label="", figsize=(15, 3), labelrotation=0, ema=0, interval=5):
+def plot_with_average(data, x_label="", y_label="", figsize=(15, 3), labelrotation=0, interval=5):
+    mean = data.values.mean()
     fig, ax = plt.subplots(figsize=figsize, dpi=100)
     ax.plot(data.index, data.values, 'mediumseagreen')
-    ewm = 0
-    mean = data.values.mean()
-    if ema > 0:
-        ewm = data.ewm(span=ema).mean()
-        ax.plot(data.index, ewm, 'b')
     ax.axhline(mean, color='r', linestyle='--')
     ax.set_xlabel(x_label)
     ax.tick_params(axis='x', labelrotation=labelrotation)
     ax.xaxis.set_major_locator(mdates.DayLocator(interval=interval))
     ax.set_ylabel(y_label)
     ax.set_ylim([0, ax.get_ylim()[1]])
-    if ema > 0:
-        ax.legend(["Total",
-                   "EMA-{} ({})".format(ema, round(ewm[-2], 1)),
-                   "Average ({})".format(round(mean, 1))])
-        return fig, ax, ewm[-2]
-
     ax.legend(["Total", "Average ({})".format(round(mean, 1))])
     return fig, ax
