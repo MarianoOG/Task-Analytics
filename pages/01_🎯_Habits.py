@@ -38,7 +38,7 @@ def render():
                                          value=30,
                                          format="%i%%") / 100.0
     selected_date = st.sidebar.date_input("Date",
-                                          date.today(),
+                                          max(tasks["completed_at"].to_list()),
                                           min_value=min(tasks["completed_at"].to_list()),
                                           max_value=max(tasks["completed_at"].to_list()))
 
