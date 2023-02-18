@@ -1,4 +1,5 @@
-import time
+import json
+import asyncio
 import requests
 import pandas as pd
 from datetime import timedelta
@@ -8,88 +9,89 @@ class DataCollector:
     def __init__(self, token):
         self.token = token
         self.sync_token = "*"
-        self._sync()
+        self.collecting = True
         self.current_offset = 0
-        self.tasks = pd.DataFrame()
-        self._collect_all_completed_tasks()
-        self._preprocess_data()
+        self._sync()
+
+    def collect_batch_of_completed_tasks(self):
+        asyncio.run(self._collect_all_completed_tasks())
 
     def _sync(self):
+        # API request
         url = "https://api.todoist.com/sync/v9/sync"
-
         headers = {"Accept": "application/json",
                    "Authorization": f"Bearer {self.token}"}
         params = {"sync_token": self.sync_token,
-                  "resource_types": '["user", "projects", "labels", "items"]'}
-
+                  "resource_types": '["user", "projects", "items"]'}
         resp = requests.get(url, headers=headers, params=params)
 
+        # Response error
         if resp.status_code != 200:
             print("There was a problem during sync.")
+            self.collecting = False
             return
 
+        # Parse response
         data = resp.json()
 
-        self.user = data["user"]
-        self.projects = data["projects"]
-        self.labels = data["labels"]
-        self.items = data["items"]
         self.sync_token = data["sync_token"]
+        self.user = data["user"]
+        self.projects = pd.DataFrame(data["projects"]).rename(columns={"id": "project_id", "name": "project_name"})
+        self.projects = self.projects[["project_id", "project_name", "color"]]
+        self.tasks = pd.DataFrame(data["items"]).rename(columns={"id": "task_id"})
+        self.tasks["due_date"] = self.tasks["due"].apply(lambda x: x["due"]["date"])
+        self.tasks["recurring"] = self.tasks.apply(lambda x: x["due"]["is_recurring"])
+        self.tasks = self.tasks[["task_id", "content", "priority", "project_id", "added_at", "due_date", "recurring"]]
+        print(self.tasks.columns)
+        print(self.tasks)
 
-    def _collect_all_completed_tasks(self, limit=10000):
-        collecting = True
-        old_num_items = 0
+    async def _collect_all_completed_tasks(self):
+        max_items = 2000
+        step = 200
+        tasks = [self._collect_completed_tasks_async(step, i * step + self.current_offset)
+                 for i in range(int(max_items/step))]
+        self.current_offset += max_items
 
-        while collecting:
-            self._collect_completed_tasks(limit=200, offset=self.current_offset)
-            current_num_items = self.tasks.shape[0]
-            if current_num_items != old_num_items and current_num_items < limit:
-                old_num_items = current_num_items
-                self.current_offset += 200
-            else:
-                self.current_offset = current_num_items
-                collecting = False
+        for task in asyncio.as_completed(tasks):
+            result = await task
+            if result:
+                items, projects = result
+                self._preprocess_data(items, projects)
 
     def _collect_completed_tasks(self, limit, offset):
         url = 'https://api.todoist.com/sync/v9/completed/get_all'
         headers = {"Accept": "application/json",
                    "Authorization": f"Bearer {self.token}"}
-        params = {"limit": limit, "offset": offset}
+        params = {"limit": limit, "offset": offset, "annotate_notes": False}
         resp = requests.get(url, headers=headers, params=params)
+        print("offset", offset, resp.status_code)
 
-        if resp.status_code == 500:
-            print("Server error!")
-        elif resp.status_code != 200:
-            time.sleep(1)
-            self._collect_completed_tasks(limit, offset)
-        else:
+        # Return data
+        if resp.status_code == 200:
             data = resp.json()
             if len(data["items"]) != 0:
-                items = pd.DataFrame(data["items"])
-                self.tasks = pd.concat([self.tasks, items])
+                return data["items"], data["projects"]
 
-    def _preprocess_data(self):
+        return None
+
+    async def _collect_completed_tasks_async(self, limit, offset):
+        return await asyncio.get_running_loop().run_in_executor(None, self._collect_completed_tasks, limit, offset)
+
+    def _preprocess_data(self, tasks, projects):
         # Projects
-        projects = pd.DataFrame()
-        projects["project_id"] = [p["id"] for p in self.projects]
-        projects["project_name"] = [p["name"] for p in self.projects]
-        projects["color"] = [p["color"] for p in self.projects]
-
-        # Labels
-        labels = dict()
-        for p in self.labels:
-            labels[p["id"]] = p["name"]
+        projects["project_id"] = [p["id"] for p in projects]
+        projects["project_name"] = [p["name"] for p in projects]
+        projects["color"] = [p["color"] for p in projects]
 
         # Active tasks
         active_tasks = pd.DataFrame()
-        active_tasks["task_id"] = [p["id"] for p in self.items]
-        active_tasks["content"] = [p["content"] for p in self.items]
-        active_tasks["priority"] = [p["priority"] for p in self.items]
-        active_tasks["project_id"] = [p["project_id"] for p in self.items]
-        active_tasks["labels"] = [[label for label in p["labels"]] for p in self.items]
-        active_tasks["added_at"] = [p["added_at"] for p in self.items]
-        active_tasks["due_date"] = [p["due"]["date"] if p["due"] else None for p in self.items]
-        active_tasks["recurring"] = [p["due"]["is_recurring"] if p["due"] else None for p in self.items]
+        active_tasks["task_id"] = [p["id"] for p in tasks]
+        active_tasks["content"] = [p["content"] for p in tasks]
+        active_tasks["priority"] = [p["priority"] for p in tasks]
+        active_tasks["project_id"] = [p["project_id"] for p in tasks]
+        active_tasks["added_at"] = [p["added_at"] for p in tasks]
+        active_tasks["due_date"] = [p["due"]["date"] if p["due"] else None for p in tasks]
+        active_tasks["recurring"] = [p["due"]["is_recurring"] if p["due"] else None for p in tasks]
         active_tasks = active_tasks.merge(projects[["project_id", "project_name", "color"]],
                                           how="left",
                                           on="project_id")

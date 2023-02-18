@@ -33,7 +33,7 @@ def render():
     # Active tasks per project
     with col1:
         st.header("Active tasks by project")
-        fig, _ = category_pie(active_tasks, "project_name")
+        fig, _ = category_pie(tasks, "project_name")
         st.pyplot(fig)
 
     # Active tasks per day
