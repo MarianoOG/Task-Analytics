@@ -3,10 +3,9 @@ from src.session import run_auth
 from src.data import DataCollector
 
 
-@st.cache(show_spinner=False)
 def get_data(token):
     dc = DataCollector(token)
-    return dc.tasks, dc.user
+    return dc.items, dc.user
 
 
 def is_data_ready():
@@ -19,8 +18,8 @@ def is_data_ready():
 
         if token is not None:
             with st.spinner("Getting your data :)"):
-                tasks, user = get_data(token)
-                st.session_state["tasks"] = tasks
+                items, user = get_data(token)
+                st.session_state["tasks"] = items
                 st.session_state["user"] = user
                 st.session_state["data_loaded"] = True
                 st.info("Your data is loaded, you can start using this app now.")
