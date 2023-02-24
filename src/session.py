@@ -23,10 +23,10 @@ def get_session_state(**kwargs):
     ctx = get_script_run_ctx()
     this_session = None
 
-    session_infos = Server.get_current()._session_info_by_id.values()
+    session_info = Server.get_current()._session_info_by_id.values()
 
-    for session_info in session_infos:
-        s = session_info.session
+    for info in session_info:
+        s = info.session
         if not hasattr(s, "_main_dg") and s._uploaded_file_mgr == ctx.uploaded_file_mgr:
             this_session = s
 
