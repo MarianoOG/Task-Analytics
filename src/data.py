@@ -11,8 +11,6 @@ class DataCollector:
         self.items = pd.DataFrame()
         items, projects = self._load_current_tasks()
         self._preprocess_data(items, projects)
-        items, projects = self._collect_completed_tasks(200, 0)  # TODO: remove from here
-        self._preprocess_data(items, projects)
 
     def _load_current_tasks(self):
         # API request
@@ -33,7 +31,7 @@ class DataCollector:
         self.user = data["user"]
         return data["items"], data["projects"]
 
-    def collect_batch_of_completed_tasks(self):
+    def collect_more_tasks(self):
         asyncio.run(self._collect_all_completed_tasks())
 
     async def _collect_all_completed_tasks(self, max_items: int = 2000):
