@@ -6,17 +6,17 @@ from datetime import timedelta
 
 class DataCollector:
     def __init__(self, token):
+        # Start attributes
         self.token = token
         self.current_offset = 0
         self.items = pd.DataFrame()
-        items, projects = self._load_current_tasks()
-        self._preprocess_data(items, projects)
+        self.collecting = True
+        self.user = None
 
-    def _load_current_tasks(self):
         # API request
         url = "https://api.todoist.com/sync/v9/sync"
         headers = {"Accept": "application/json",
-                   "Authorization": f"Bearer {self.token}"}
+                   "Authorization": f"Bearer {token}"}
         params = {"sync_token": "*",
                   "resource_types": '["user", "projects", "items"]'}
         resp = requests.get(url, headers=headers, params=params)
@@ -26,17 +26,18 @@ class DataCollector:
             print(f"There was a problem during sync with status code {resp.status_code}.")
             return
 
-        # Parse response
+        # Parse and save response
         data = resp.json()
         self.user = data["user"]
-        return data["items"], data["projects"]
+        self._preprocess_data(data["items"], data["projects"])
 
-    def collect_more_tasks(self):
-        asyncio.run(self._collect_all_completed_tasks())
+    def collect_more_items(self):
+        asyncio.run(self._collect_batch_of_items())
 
-    async def _collect_all_completed_tasks(self, max_items: int = 2000):
+    async def _collect_batch_of_items(self, max_items: int = 1000):
+        # Create list of tasks
         step = 200
-        tasks = [self._collect_completed_tasks_async(step, i * step + self.current_offset)
+        tasks = [self._collect_completed_items_async(step, i * step + self.current_offset)
                  for i in range(int(max_items/step))]
         self.current_offset += max_items
 
@@ -48,7 +49,7 @@ class DataCollector:
             items, projects = result
             self._preprocess_data(items, projects)
 
-    def _collect_completed_tasks(self, limit, offset):
+    def _collect_completed_items(self, limit, offset):
         # API request
         url = 'https://api.todoist.com/sync/v9/completed/get_all'
         headers = {"Accept": "application/json",
@@ -58,18 +59,20 @@ class DataCollector:
 
         # Handle error
         if resp.status_code != 200:
-            print("There was a problem during collection.\n",
+            print("Not successful request.\n",
                   f"\tStatus code: {resp.status_code}\n",
+                  f"\tMessage: {resp.text}\n",
                   f"\tLimit: {limit}\n",
                   f"\tOffset: {offset}")
+            self.collecting = False
             return
 
         # Return data
         data = resp.json()
-        return data["items"], data["projects"]
+        self._preprocess_data(data["items"], data["projects"])
 
-    async def _collect_completed_tasks_async(self, limit, offset):
-        return await asyncio.get_running_loop().run_in_executor(None, self._collect_completed_tasks, limit, offset)
+    async def _collect_completed_items_async(self, limit, offset):
+        return await asyncio.get_running_loop().run_in_executor(None, self._collect_completed_items, limit, offset)
 
     def _preprocess_data(self, items, projects):
         # Verify there's at least one new task
@@ -98,7 +101,7 @@ class DataCollector:
             items["due_date"] = items["due"].apply(lambda x: x["date"] if x else None)
             items["recurring"] = items["due"].apply(lambda x: x["is_recurring"] if x else False)
         else:
-            items = items.merge(self.items[["task_id", "recurring"]], how="left", on="task_id")
+            items = items.merge(self.items[["task_id", "recurring"]].drop_duplicates(), how="left", on="task_id")
 
         # Set default priority to 0 if not provided then, add format
         if "priority" not in items.columns.values.tolist():
