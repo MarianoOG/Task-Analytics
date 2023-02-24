@@ -71,7 +71,7 @@ def run_auth():
     code = params.get("code")
 
     if not code:
-        st.title("Welcome to Todoist analytics")
+        st.title("Welcome to Task analytics")
         st.write(f"""<h2>Please login using this <a target="_self" href="{auth_url}">url</a></h2>""",
                  unsafe_allow_html=True)
     else:
