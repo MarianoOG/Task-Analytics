@@ -11,7 +11,7 @@ def render():
                          disabled=not st.session_state["collecting"]):
         st.session_state["collecting"] = False
         load_more_data()
-    if st.sidebar.button("Refresh data", help="This action will delete all data and load it again"):
+    if st.sidebar.button("Refresh data ⚠️", help="This action will delete all data and load it again"):
         refresh_data()
         return
 
