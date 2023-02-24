@@ -83,9 +83,9 @@ class DataCollector:
             projects = pd.DataFrame(projects).rename(columns={"id": "project_id", "name": "project_name"})
         else:
             projects = pd.DataFrame(projects.values(), index=projects.keys()).reset_index()
-            projects = projects.rename(columns={"index": "project_id", "name": "project_name"})
-            projects.loc[(projects["project_name"] == ''), 'project_name'] = \
-                projects.loc[(projects["project_name"] == ''), 'project_id']
+            projects = projects.rename(columns={"index": "project_id"})
+            projects["project_name"] = projects.apply(lambda x: x["project_id"] if x["name"] == '' else x["name"],
+                                                      axis=1)
         projects = projects[["project_id", "project_name", "color"]]
 
         # Transform items data into a DataFrame
@@ -121,27 +121,32 @@ class DataCollector:
 
         # Format dates using timezone
         timezone = self.user["tz_info"]["timezone"]
-        items["completed_at"] = pd.to_datetime(items["completed_at"]).map(lambda x: x.tz_convert(timezone))
-        items["added_at"] = pd.to_datetime(items["added_at"]).map(lambda x: x.tz_convert(timezone))
+        items["completed_at"] = pd.to_datetime(items["completed_at"], utc=True).map(lambda x: x.tz_convert(timezone))
+        items["added_at"] = pd.to_datetime(items["added_at"], utc=True).map(lambda x: x.tz_convert(timezone))
         items["due_date"] = pd.to_datetime(items["due_date"], utc=True).map(lambda x: x.tz_convert(timezone))
 
         # Enhance the dataframe with year, quarter, month, week, day
-        items["year"] = items["completed_at"].dt.year
-        items["quarter"] = items["completed_at"].dt.quarter
-        items["month"] = items["completed_at"].dt.month
-        items["week"] = items["completed_at"].dt.date.map(lambda x: None if pd.isnull(x) else (x + timedelta(
-            days=8-self.user["start_day"])).isocalendar()[1])
-        items["day"] = items['completed_at'].dt.day
+        start_day = 8 - self.user["start_day"]
+        items["completed_year"] = items["completed_at"].dt.year
+        items["completed_quarter"] = items["completed_at"].dt.quarter
+        items["completed_month"] = items["completed_at"].dt.month
+        items["completed_week"] = items["completed_at"].dt.date.map(lambda x: None if pd.isnull(x) else (x + timedelta(
+            days=start_day)).isocalendar()[1])
+        items["completed_day"] = items['completed_at'].dt.day
+        items["due_year"] = items["due_date"].dt.year
+        items["due_quarter"] = items["due_date"].dt.quarter
+        items["due_month"] = items["due_date"].dt.month
+        items["due_week"] = items["due_date"].dt.date.map(lambda x: None if pd.isnull(x) else (x + timedelta(
+            days=start_day)).isocalendar()[1])
+        items["due_day"] = items['due_date'].dt.day
 
         # Combine all tasks in one dataframe and format columns
         self.items = pd.concat([items, self.items], axis=0, ignore_index=True)
-        self.items["priority"] = self.items["priority"].astype("category")
         self.items["recurring"] = self.items["recurring"].astype("bool")
-        self.items["project_name"] = self.items["project_name"].astype("category")
-        self.items["color"] = self.items["color"].astype("category")
-        self.items["year"] = self.items["year"].astype("Int64")
-        self.items["quarter"] = self.items["quarter"].astype("Int64")
-        self.items["month"] = self.items["month"].astype("Int64")
-        self.items["week"] = self.items["week"].astype("Int64")
-        self.items["day"] = self.items["day"].astype("Int64")
-        print(self.items[["added_at", "due_date", "completed_at"]].dtypes)
+        for column in ["task_id", "content", "project_name"]:
+            self.items[column] = self.items[column].astype("string")
+        for column in ["priority", "project_name", "color"]:
+            self.items[column] = self.items[column].astype("category")
+        for column in ["completed_year", "completed_quarter", "completed_month", "completed_week", "completed_day",
+                       "due_year", "due_quarter", "due_month", "due_week", "due_day"]:
+            self.items[column] = self.items[column].astype("Int64")
