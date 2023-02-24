@@ -16,8 +16,8 @@ def render():
     # Get all tasks
     tasks = st.session_state["tasks"].copy()
     completed_tasks = tasks.dropna(subset=["completed_at"])
-    completed_tasks["week"] = completed_tasks["year"].astype(str) + "-S" + \
-        completed_tasks["week"].map(lambda x: "{:02d}".format(x))
+    completed_tasks["week"] = completed_tasks["completed_year"].astype(str) + "-S" + \
+        completed_tasks["completed_week"].map(lambda x: "{:02d}".format(x))
 
     # Get count of completed tasks per day and week
     completed_tasks_per_day = completed_tasks["task_id"].groupby(by=completed_tasks["completed_at"].dt.date)\
