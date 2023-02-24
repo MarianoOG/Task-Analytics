@@ -29,11 +29,8 @@ def expandable_with_tasks(task_list, day, expanded=False):
 
 
 def render():
-    # Get tasks
+    # Header
     st.title("Planing")
-    tasks = st.session_state["tasks"].copy()
-
-    # Symbols
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     col1.metric("Completed", "🏆")
     col2.metric("Failed", "❌")
@@ -43,33 +40,28 @@ def render():
     col6.metric("Suggestions", "💡")
 
     # Combine due date and completed date
-    week_tasks = tasks.copy()
-    week_tasks["date"] = tasks.apply(lambda x: x["due_date"] if x["completed_at"] is pd.NaT else x["completed_at"],
-                                     axis=1)
-
-    # Start day and today
-    today = date.today()
-    start_day = 8 - st.session_state["user"].get("start_day", 1)
-
-    # Get week and year of tasks
-    week_tasks["week"] = week_tasks["date"].dt.date.map(lambda x: None if pd.isnull(x) else (x + timedelta(
-        days=start_day)).isocalendar()[1])
-    week_tasks["year"] = week_tasks["date"].apply(lambda x: x.year).astype('Int64').fillna(0)
+    week_tasks = st.session_state["tasks"].copy()
+    week_tasks["date"] = week_tasks.apply(lambda x: x["due_date"] if x["completed_at"] is pd.NaT else x["completed_at"],
+                                          axis=1)
+    week_tasks["week"] = week_tasks.apply(lambda x: x["due_week"] if x["completed_at"] is pd.NaT else
+                                          x["completed_week"], axis=1)
+    week_tasks["year"] = week_tasks.apply(lambda x: x["due_year"] if x["completed_at"] is pd.NaT else
+                                          x["completed_year"], axis=1)
 
     # Filter tasks of the week
-    week_tasks = week_tasks[week_tasks["year"] == today.year]
-    week_tasks = week_tasks[week_tasks["week"] == today.isocalendar()[1]]
+    week_tasks = week_tasks[week_tasks["year"] == date.today().year]
+    week_tasks = week_tasks[week_tasks["week"] == date.today().isocalendar()[1]]
     week_tasks = week_tasks.sort_values(by=["completed_at", "due_date"])
 
     # Layout of page
     other_col, now_col, suggestions_col = st.columns([1, 2, 1])
 
     # Suggestions
-    suggestions = tasks.copy()
+    suggestions = st.session_state["tasks"].copy()
     suggestions = suggestions[suggestions["completed_at"].isnull()]
     suggestions = suggestions[suggestions["due_date"].isnull()]
 
-    # Rank projects
+    # Sidebar rank projects
     st.sidebar.subheader("Rank each project to get suggestions")
     projects = set(suggestions["project_name"].unique())
     sort_project = {}
@@ -97,7 +89,7 @@ def render():
     for day in week_tasks["date"].apply(lambda x: x.date).unique():
         tasks_in_the_day = week_tasks[week_tasks["date"].apply(lambda x: x.strftime('%A')) == day.strftime('%A')]
 
-        if today == day:
+        if date.today() == day:
             with now_col:
                 expandable_with_tasks(tasks_in_the_day, day, expanded=True)
         else:

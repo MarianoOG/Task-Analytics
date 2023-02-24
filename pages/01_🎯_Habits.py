@@ -23,8 +23,7 @@ def render():
     ################################
 
     # Get all tasks
-    tasks = st.session_state["tasks"].copy()
-    tasks = tasks[["task_id", "content", "project_name", "completed_at"]].dropna(subset=["completed_at"])
+    tasks = st.session_state["tasks"].copy().dropna(subset=["completed_at"])
 
     ################################
     #           SIDEBAR            #
@@ -55,19 +54,18 @@ def render():
     ################################
 
     # Tasks per period of time
-    tasks_of_year = tasks[tasks["completed_at"].dt.year == year]
-    tasks_of_quarter = tasks_of_year[tasks_of_year["completed_at"].dt.quarter == quarter]
-    tasks_of_month = tasks_of_quarter[tasks_of_quarter["completed_at"].dt.month == month]
-    tasks_of_week = tasks_of_year[(tasks_of_year["completed_at"] +
-                                   timedelta(days=start_day)).dt.isocalendar().week == week]
+    tasks_of_year = tasks[tasks["completed_year"] == year]
+    tasks_of_quarter = tasks_of_year[tasks_of_year["completed_quarter"] == quarter]
+    tasks_of_month = tasks_of_quarter[tasks_of_quarter["completed_month"] == month]
+    tasks_of_week = tasks_of_year[tasks_of_year["completed_week"] == week]
 
     # Filter for habits
     habits = tasks[tasks.duplicated(subset=["task_id"], keep=False)]
-    habits_of_year = habits[habits["completed_at"].dt.year == year]
-    habits_of_quarter = habits_of_year[habits_of_year["completed_at"].dt.quarter == quarter]
-    habits_of_month = habits_of_quarter[habits_of_quarter["completed_at"].dt.month == month]
-    habits_of_week = habits_of_year[(habits_of_year["completed_at"] +
-                                     timedelta(days=start_day)).dt.isocalendar().week == week]
+    habits_of_year = habits[habits["completed_year"] == year]
+    habits_of_quarter = habits_of_year[habits_of_year["completed_quarter"] == quarter]
+    habits_of_month = habits_of_quarter[habits_of_quarter["completed_month"] == month]
+    habits_of_week = habits_of_year[habits_of_year["completed_week"] == week]
+
     # Get the number of aggregated tasks per day
     counts_of_year_per_day = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_at'].dt.date).count()
     counts_of_quarter_per_day = counts_of_year_per_day[tasks_of_quarter['completed_at'].dt.date]
@@ -77,8 +75,8 @@ def render():
     # Get the number of aggregated tasks per month
     month_names = ['January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December']
-    counts_of_year_per_month = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_at'].dt.month).count()
-    counts_of_quarter_per_month = counts_of_year_per_month[tasks_of_quarter['completed_at'].dt.month]
+    counts_of_year_per_month = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_month']).count()
+    counts_of_quarter_per_month = counts_of_year_per_month[tasks_of_quarter['completed_month']]
     counts_of_year_per_month.set_axis([month_names[i - 1] for i in counts_of_year_per_month.index], inplace=True)
     counts_of_quarter_per_month.set_axis([month_names[i - 1] for i in counts_of_quarter_per_month.index], inplace=True)
 
