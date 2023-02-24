@@ -14,8 +14,7 @@ def render():
                        "https://todoist.com/app/settings/productivity) inside of todoist.")
 
     # Get all tasks
-    tasks = st.session_state["tasks"].copy()
-    completed_tasks = tasks.dropna(subset=["completed_at"])
+    completed_tasks = st.session_state["tasks"].copy().dropna(subset=["completed_at"])
     completed_tasks["week"] = completed_tasks["completed_year"].astype(str) + "-S" + \
         completed_tasks["completed_week"].map(lambda x: "{:02d}".format(x))
 
@@ -49,7 +48,8 @@ def render():
     weekly_goal = st.session_state["user"].get("weekly_goal", 0)
 
     # Get age of active tasks
-    active_tasks = tasks[tasks["added_at"].apply(lambda x: not pd.isnull(x))]
+    active_tasks = st.session_state["tasks"].copy()
+    active_tasks = active_tasks[active_tasks["added_at"].apply(lambda x: not pd.isnull(x))]
     active_tasks = active_tasks[active_tasks["due_date"].apply(lambda x: pd.isnull(x))]
     active_tasks = active_tasks[active_tasks["recurring"].apply(lambda x: not x)]
     age_in_days = (date.today() - active_tasks["added_at"].dt.date).dt.days.rename("Age In Days")
