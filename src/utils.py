@@ -5,24 +5,43 @@ from src.data import DataCollector
 
 def get_data(token):
     dc = DataCollector(token)
-    return dc.items, dc.user
+    dc.collect_more_items()
+    return dc
 
 
 def is_data_ready():
     # Set page config
-    st.set_page_config(page_title="Todoist Analytics", layout="wide", page_icon="📊")
+    st.set_page_config(page_title="Task Analytics", layout="wide", page_icon="📊")
 
     # Check if user is authenticated and load data
-    if 'data_loaded' not in st.session_state:
-        token = run_auth()
-
-        if token is not None:
-            with st.spinner("Getting your data :)"):
-                items, user = get_data(token)
-                st.session_state["tasks"] = items
-                st.session_state["user"] = user
-                st.session_state["data_loaded"] = True
-                st.info("Your data is loaded, you can start using this app now.")
+    if 'data_is_ready' not in st.session_state:
+        refresh_data()
 
     # If user is authenticated, return True
-    return 'data_loaded' in st.session_state
+    return 'data_is_ready' in st.session_state
+
+
+def refresh_data():
+    token = run_auth()
+    if token:
+        with st.spinner("Getting your data :)"):
+            colector = get_data(token)
+            st.session_state["colector"] = colector
+            st.session_state["tasks"] = colector.items
+            st.session_state["user"] = colector.user
+            st.session_state["collecting"] = colector.collecting
+            st.session_state["data_is_ready"] = True
+            st.info("Your data is loaded, you can start using this app now.")
+
+
+def load_more_data():
+    if 'colector' in st.session_state:
+        colector = st.session_state["colector"]
+        with st.spinner("Getting more data :)"):
+            colector.collect_more_items()
+            st.session_state["colector"] = colector
+            st.session_state["tasks"] = colector.items
+            st.session_state["user"] = colector.user
+            st.session_state["collecting"] = colector.collecting
+            st.session_state["data_is_ready"] = True
+            st.info("Your data is loaded, you can start using this app now.")

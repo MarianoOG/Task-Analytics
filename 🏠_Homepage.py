@@ -1,10 +1,20 @@
 from datetime import date
 import streamlit as st
-from src.utils import is_data_ready
+from src.utils import is_data_ready, refresh_data, load_more_data
 from src.plots import category_pie, category_plot, heatmap_plot
 
 
 def render():
+    # Sidebar
+    if st.sidebar.button("Load more data",
+                         help="This action will load another 1,000 tasks, disabled if no more data available",
+                         disabled=not st.session_state["collecting"]):
+        st.session_state["collecting"] = False
+        load_more_data()
+    if st.sidebar.button("Refresh data", help="This action will delete all data and load it again"):
+        refresh_data()
+        return
+
     # Get data
     st.title("Homepage" + " - Welcome " + st.session_state["user"]["full_name"])
     tasks = st.session_state["tasks"].copy()
@@ -22,7 +32,7 @@ def render():
 
     # Completed tasks heatmap of the current year
     st.header(f"Heatmap of completed task in current year")
-    tasks_of_year = completed_tasks[completed_tasks["completed_at"].dt.year == date.today().year]
+    tasks_of_year = completed_tasks[completed_tasks["completed_year"] == date.today().year]
     counts_of_year_per_day = tasks_of_year["task_id"].groupby(by=tasks_of_year['completed_at'].dt.date).count()
     fig, _ = heatmap_plot(counts_of_year_per_day)
     st.pyplot(fig)
@@ -44,7 +54,7 @@ def render():
 
     # Completed tasks heatmap of the current year
     st.header(f"Heatmap of due task in current year")
-    tasks_of_year = due_tasks[due_tasks["due_date"].dt.year == date.today().year]
+    tasks_of_year = due_tasks[due_tasks["due_year"] == date.today().year]
     counts_of_year_per_day = tasks_of_year["task_id"].groupby(by=tasks_of_year['due_date'].dt.date).count()
     fig, _ = heatmap_plot(counts_of_year_per_day)
     st.pyplot(fig)
