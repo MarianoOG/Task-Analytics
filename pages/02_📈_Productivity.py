@@ -52,7 +52,7 @@ def render():
     active_tasks = active_tasks[active_tasks["added_at"].apply(lambda x: not pd.isnull(x))]
     active_tasks = active_tasks[active_tasks["due_date"].apply(lambda x: pd.isnull(x))]
     active_tasks = active_tasks[active_tasks["recurring"].apply(lambda x: not x)]
-    age_in_days = (date.today() - active_tasks["added_at"].dt.date).dt.days.rename("Age In Days")
+    active_tasks["age_in_days"] = (date.today() - active_tasks["added_at"].dt.date).dt.days
 
     # Daily goals, velocity and recommendation
     col1, col2, col3 = st.columns(3)
@@ -102,13 +102,26 @@ def render():
                 "{} tasks".format(active_tasks.shape[0]),
                 help="Current amount of active tasks.")
     col2.metric("Average Age",
-                "{} days".format(round(age_in_days.mean(), 1)),
+                "{} days".format(round(active_tasks["age_in_days"].mean(), 1)),
                 help="Average age since tasks were created.")
     col3.metric("Lead time",
                 "{} days".format(round(active_tasks.shape[0] / day_velocity, 1)),
                 help="Expected amount of time to complete a task once its created.")
-    fig, _ = histogram(age_in_days)
+    fig, _ = histogram(active_tasks["age_in_days"])
     st.pyplot(fig)
+
+    # Oldest task list
+    with st.expander("Oldest tasks"):
+        st.write("")
+        oldest = active_tasks.sort_values("age_in_days", ascending=False).head(10)
+        table_str = "| Added Date | Project | Labels | Content | URL |\n"
+        table_str += "|----|----|----|----|----|\n"
+        for added, project, labels, task, task_id in zip(oldest["added_at"], oldest["project_name"], oldest["labels"],
+                                                         oldest["content"], oldest["task_id"]):
+            table_str += f"| **{added.date()}** | {project} | {', '.join(labels)} | {task} | " \
+                         f"*[open in todoist](https://todoist.com/app/task/{task_id})* | \n"
+        st.markdown(table_str)
+        st.write("")
 
 
 if __name__ == "__main__":

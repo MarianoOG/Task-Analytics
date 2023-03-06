@@ -25,23 +25,23 @@ def refresh_data():
     token = run_auth()
     if token:
         with st.spinner("Getting your data :)"):
-            colector = get_data(token)
-            st.session_state["colector"] = colector
-            st.session_state["tasks"] = colector.items
-            st.session_state["user"] = colector.user
-            st.session_state["collecting"] = colector.collecting
+            collector = get_data(token)
+            st.session_state["collector"] = collector
+            st.session_state["tasks"] = collector.items
+            st.session_state["user"] = collector.user
+            st.session_state["collecting"] = collector.collecting
             st.session_state["data_is_ready"] = True
             st.info("Your data is loaded, you can start using this app now.")
 
 
 def load_more_data():
-    if 'colector' in st.session_state:
-        colector = st.session_state["colector"]
+    if 'collector' in st.session_state:
+        collector = st.session_state["collector"]
         with st.spinner("Getting more data :)"):
-            colector.collect_more_items()
-            st.session_state["colector"] = colector
-            st.session_state["tasks"] = colector.items
-            st.session_state["user"] = colector.user
-            st.session_state["collecting"] = colector.collecting
+            collector.collect_more_items()
+            st.session_state["collector"] = collector
+            st.session_state["tasks"] = collector.items
+            st.session_state["user"] = collector.user
+            st.session_state["collecting"] = collector.collecting
             st.session_state["data_is_ready"] = True
             st.info("Your data is loaded, you can start using this app now.")

@@ -1,5 +1,5 @@
 # Set up
-FROM python:3.8-slim
+FROM python:3.10-slim
 WORKDIR /app
 
 # Install dependencies
