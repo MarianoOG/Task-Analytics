@@ -1,8 +1,6 @@
 # Task Analytics
 
-The main goal for this tool is to help you visualize, analyze and get insights about your task data.
-
-You can access the demo in [task-analytics.marianoog.com](https://task-analytics.marianoog.com/).
+The main goal for this tool is to help you visualize, analyze and get insights about your tasks in todoist.
 
 ## How to run this tool locally
 
